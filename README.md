@@ -271,7 +271,7 @@ The same `--dry-run` flag also works with `--launch-mode direct`; in that case t
 
 * `--nodes`: comma-separated host list. Use four nodes for the full paper-artifact reproduction. Each node launches two ranks.
 * `--launch-mode`: `qsub` submits through SGE; `direct` launches the same node-level scripts over `ssh`.
-* `--aggregation-methods`: comma-separated communication hooks. The default is `bf16,MXfp8,fp4,fp6,zero,dynamiQ_aee_5bit,dynamiQ_mee_5bit,dynamiQ_mee_5bit_dynamic_bitrate,omnireduce,thc`.
+* `--aggregation-methods`: comma-separated communication hooks. The default is `bf16,MXfp8,fp4,fp6,zero,dynamiQ_aee_5bit,dynamiQ_mee_5bit,dynamiQ_mee_5bit_dynamic_bitrate,omnireduce,thc`. To reproduce figure 7 and table 4 with varied bitrate for DynamiQ, simply change `5bit` to `3bit`, `4bit`, `5bit`, `6bit` and `7bit`.
 * `--rails`: number of RDMA rails. Use `--rails 1` for the reproduced paper-artifact configuration. Use `--rails 2` only on systems with two working RDMA interfaces.
 * `--iface0`, `--iface1`: network interface names for one-rail or two-rail RDMA runs.
 * `--dynamic-pipeline-rdma`: enables the pipelined dynamic AEE/MEE RDMA path.
