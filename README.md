@@ -1,4 +1,4 @@
-# DynamiQ_SIGCOMM_Artifact
+# DynamiQ SIGCOMM Artifact
 
 This repository contains both:
 
