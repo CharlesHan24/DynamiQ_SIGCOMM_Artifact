@@ -40,6 +40,8 @@ CAUSAL_BLOCK_SIZE=3000
 PER_DEVICE_TRAIN_BATCH_SIZE=""
 TO_SHRIMP=""
 EXTRA_TRAIN_ARGS=""
+DATA_CACHE_DIR="${DYNAMIQ_DATA_CACHE:-}"
+MODEL_CACHE_DIR="${DYNAMIQ_MODEL_CACHE:-}"
 
 GPU_PAIR_STARTS="4,2,6,0"
 MAX_USED_MB=512
@@ -93,6 +95,8 @@ while [[ $# -gt 0 ]]; do
     --causal-block-size|--block-size|--block_size) CAUSAL_BLOCK_SIZE="$2"; shift 2 ;;
     --per-device-train-batch-size|--per_device_train_batch_size) PER_DEVICE_TRAIN_BATCH_SIZE="$2"; shift 2 ;;
     --to-shrimp|--to_shrimp) TO_SHRIMP="$2"; shift 2 ;;
+    --data-cache-dir|--data_cache_dir) DATA_CACHE_DIR="$2"; shift 2 ;;
+    --model-cache-dir|--model_cache_dir) MODEL_CACHE_DIR="$2"; shift 2 ;;
     --extra-train-args) EXTRA_TRAIN_ARGS="$2"; shift 2 ;;
     --gpu-pair-starts) GPU_PAIR_STARTS="$2"; shift 2 ;;
     --max-used-mb) MAX_USED_MB="$2"; shift 2 ;;
@@ -308,6 +312,8 @@ fi
   echo "methods=${METHODS[*]}"
   echo "learning_rate=$LR_VALUE"
   echo "per_device_train_batch_size=$PER_DEVICE_TRAIN_BATCH_SIZE"
+  echo "data_cache_dir=${DATA_CACHE_DIR:-hf_default}"
+  echo "model_cache_dir=${MODEL_CACHE_DIR:-hf_default}"
   echo "num_train_epochs=$NUM_TRAIN_EPOCHS"
   echo "conda_env=$CONDA_ENV"
   echo "python=$(command -v python)"
@@ -375,6 +381,12 @@ for method in "${METHODS[@]}"; do
 
   if [[ "$TASK" == "causal" ]]; then
     cmd+=(--block_size "$CAUSAL_BLOCK_SIZE")
+  fi
+  if [[ -n "$DATA_CACHE_DIR" ]]; then
+    cmd+=(--data_cache_dir "$DATA_CACHE_DIR")
+  fi
+  if [[ -n "$MODEL_CACHE_DIR" ]]; then
+    cmd+=(--model_cache_dir "$MODEL_CACHE_DIR")
   fi
   if [[ -n "$EXTRA_TRAIN_ARGS" ]]; then
     cmd+=(${=EXTRA_TRAIN_ARGS})

@@ -36,6 +36,8 @@ CAUSAL_BLOCK_SIZE=3000
 PER_DEVICE_TRAIN_BATCH_SIZE=""
 LEARNING_RATE=""
 EXTRA_TRAIN_ARGS=""
+DATA_CACHE_DIR="${DYNAMIQ_DATA_CACHE:-}"
+MODEL_CACHE_DIR="${DYNAMIQ_MODEL_CACHE:-}"
 
 GPU_MAX_USED_MB=512
 NUMA_NODE="none"
@@ -72,6 +74,8 @@ while [[ $# -gt 0 ]]; do
     --causal-block-size|--block-size|--block_size) CAUSAL_BLOCK_SIZE="$2"; shift 2 ;;
     --per-device-train-batch-size|--per_device_train_batch_size) PER_DEVICE_TRAIN_BATCH_SIZE="$2"; shift 2 ;;
     --learning-rate|--learning_rate) LEARNING_RATE="$2"; shift 2 ;;
+    --data-cache-dir|--data_cache_dir) DATA_CACHE_DIR="$2"; shift 2 ;;
+    --model-cache-dir|--model_cache_dir) MODEL_CACHE_DIR="$2"; shift 2 ;;
     --extra-train-args) EXTRA_TRAIN_ARGS="$2"; shift 2 ;;
     --gpu-max-used-mb|--max-used-mb) GPU_MAX_USED_MB="$2"; shift 2 ;;
     --numa-node) NUMA_NODE="$2"; shift 2 ;;
@@ -231,6 +235,8 @@ done
   echo "learning_rate=$LR_VALUE"
   echo "decay_epochs=$DECAY_EPOCHS"
   echo "per_device_train_batch_size=$PER_DEVICE_TRAIN_BATCH_SIZE"
+  echo "data_cache_dir=${DATA_CACHE_DIR:-hf_default}"
+  echo "model_cache_dir=${MODEL_CACHE_DIR:-hf_default}"
   echo "conda_env=$CONDA_ENV"
   echo "python=$(command -v python)"
   nvidia-smi -L || true
@@ -276,6 +282,8 @@ for method in "${methods[@]}"; do
 
   [[ "$TASK" == "wikitext" || "$TASK" == "maskedlm" || "$TASK" == "mlm" ]] && cmd+=(--fixed_lr_epochs 6)
   [[ "$TASK" == "causal" ]] && cmd+=(--block_size "$CAUSAL_BLOCK_SIZE")
+  [[ -n "$DATA_CACHE_DIR" ]] && cmd+=(--data_cache_dir "$DATA_CACHE_DIR")
+  [[ -n "$MODEL_CACHE_DIR" ]] && cmd+=(--model_cache_dir "$MODEL_CACHE_DIR")
   [[ -n "$EXTRA_TRAIN_ARGS" ]] && cmd+=(${=EXTRA_TRAIN_ARGS})
 
   run_cmd=("${cmd[@]}")

@@ -1,9 +1,30 @@
+import os
+from pathlib import Path
+
 import torch.distributed as dist
 import torch
 import pdb
 import sys
 import time
 import torch.profiler
+
+
+def correlated_rand_dir():
+    override = os.environ.get("DYNAMIQ_CORRELATED_RAND_DIR")
+    if override:
+        return Path(override)
+    return Path(__file__).resolve().parents[2] / "simulations_llm" / "models" / "correlated_rand"
+
+
+def load_correlated_rand_tensor(nclients, rank):
+    path = correlated_rand_dir() / f"obj_{nclients}_{rank}.pt"
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Missing correlated random tensor: {path}. "
+            "Run `python simulations_llm/gen_correlated_rand.py` from the repository root first, "
+            "or set DYNAMIQ_CORRELATED_RAND_DIR."
+        )
+    return torch.load(path)
 
 
 class overflow_pickup_summation(object):
@@ -362,7 +383,7 @@ class Aee_Dynamic_Range_GPU_kern(object):
         
         self.three_times_cur_max_size = (3 * self.cur_max_size) // self.nclients
         if "correlated" in params["args"].aggregation_method:
-            random_obj = torch.load("/cluster/project2/gcreduce_data/data/correlated_rand/obj_{}_{}.pt".format(self.nclients, self.client_rank))
+            random_obj = load_correlated_rand_tensor(self.nclients, self.client_rank)
             self.randomized_vec_pool = random_obj.to(device="cuda")[:self.three_times_cur_max_size * self.chunk_size].view(self.three_times_cur_max_size, self.chunk_size)
         else:
             self.randomized_vec_pool = torch.rand(dtype=torch.bfloat16, size=(self.three_times_cur_max_size, chunk_size), device="cuda") # NOTE: range is [0, 1]
@@ -463,7 +484,7 @@ class Mee_Dynamic_Range_GPU_kern(object):
         
         self.three_times_cur_max_size = (3 * self.cur_max_size) // self.nclients
         if "correlated" in params["args"].aggregation_method:
-            random_obj = torch.load("/cluster/project2/gcreduce_data/data/correlated_rand/obj_{}_{}.pt".format(self.nclients, self.client_rank))
+            random_obj = load_correlated_rand_tensor(self.nclients, self.client_rank)
             self.randomized_vec_pool = random_obj.to(device="cuda")[:self.three_times_cur_max_size * self.chunk_size].view(self.three_times_cur_max_size, self.chunk_size).to(dtype=torch.float16)
         else:
             self.randomized_vec_pool = torch.rand(dtype=torch.bfloat16, size=(self.three_times_cur_max_size, chunk_size), device="cuda") # NOTE: range is [0, 1]

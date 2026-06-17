@@ -44,6 +44,8 @@ CAUSAL_BLOCK_SIZE=3000
 PER_DEVICE_TRAIN_BATCH_SIZE=""
 TO_SHRIMP=""
 EXTRA_TRAIN_ARGS=""
+DATA_CACHE_DIR="${DYNAMIQ_DATA_CACHE:-}"
+MODEL_CACHE_DIR="${DYNAMIQ_MODEL_CACHE:-}"
 
 GPU_PAIR_STARTS="4,2,6,0"
 MAX_USED_MB=512
@@ -114,6 +116,8 @@ Options:
   --per-device-train-batch-size <n>
                                   Override per-device batch size for every scenario
   --to-shrimp <True|False>      Override to_shrimp for every scenario
+  --data-cache-dir <path>       Dataset cache passed to train scripts. Default: env/HF cache
+  --model-cache-dir <path>      Model cache passed to train scripts. Default: env/HF cache
   --extra-train-args <string>   Extra raw train args appended by the node runner
   --conda-env <name>            Conda env activated inside qsub jobs. Default: llm
   --cuda-home <path>            CUDA toolkit root. Default: /share/apps/cuda-11.8
@@ -160,6 +164,8 @@ while [[ $# -gt 0 ]]; do
     --causal-block-size|--block-size|--block_size) CAUSAL_BLOCK_SIZE="$2"; shift 2 ;;
     --per-device-train-batch-size|--per_device_train_batch_size) PER_DEVICE_TRAIN_BATCH_SIZE="$2"; shift 2 ;;
     --to-shrimp|--to_shrimp) TO_SHRIMP="$2"; shift 2 ;;
+    --data-cache-dir|--data_cache_dir) DATA_CACHE_DIR="$2"; shift 2 ;;
+    --model-cache-dir|--model_cache_dir) MODEL_CACHE_DIR="$2"; shift 2 ;;
     --extra-train-args) EXTRA_TRAIN_ARGS="$2"; shift 2 ;;
     --gpu-pair-starts) GPU_PAIR_STARTS="$2"; shift 2 ;;
     --max-used-mb) MAX_USED_MB="$2"; shift 2 ;;
@@ -325,6 +331,8 @@ chmod +x "$RUN_DIR/build_eden_utils_command.zsh"
   echo "causal_block_size=$CAUSAL_BLOCK_SIZE"
   echo "per_device_train_batch_size=${PER_DEVICE_TRAIN_BATCH_SIZE:-task_default}"
   echo "to_shrimp=${TO_SHRIMP:-task_default}"
+  echo "data_cache_dir=${DATA_CACHE_DIR:-hf_default}"
+  echo "model_cache_dir=${MODEL_CACHE_DIR:-hf_default}"
   echo "extra_train_args=$EXTRA_TRAIN_ARGS"
   echo "conda_env=$CONDA_ENV"
   echo "cuda_home=$CUDA_HOME_DIR"
@@ -451,6 +459,12 @@ submit_one() {
   fi
   if [[ -n "$TO_SHRIMP" ]]; then
     node_args+=(--to-shrimp "$TO_SHRIMP")
+  fi
+  if [[ -n "$DATA_CACHE_DIR" ]]; then
+    node_args+=(--data-cache-dir "$DATA_CACHE_DIR")
+  fi
+  if [[ -n "$MODEL_CACHE_DIR" ]]; then
+    node_args+=(--model-cache-dir "$MODEL_CACHE_DIR")
   fi
   if [[ -n "$EXTRA_TRAIN_ARGS" ]]; then
     node_args+=(--extra-train-args "$EXTRA_TRAIN_ARGS")

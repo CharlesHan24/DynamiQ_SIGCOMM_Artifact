@@ -94,14 +94,31 @@ print("nccl", torch.cuda.nccl.version() if torch.cuda.is_available() else "n/a")
 PY
 ```
 
-The training scripts use the following default cache locations:
+The training scripts download datasets and models through Hugging Face when they
+are not already cached. By default they use Hugging Face's normal cache
+locations, usually under `~/.cache/huggingface`.
+
+To use explicit cache directories, either export:
 
 ```bash
-DATA_CACHE=/cluster/project2/gcreduce_data/data
-MODEL_CACHE=/cluster/project2/gcreduce_data/pretrained_models/language_model
+export DYNAMIQ_DATA_CACHE="$DYNAMIQ_HOME/hf_data"
+export DYNAMIQ_MODEL_CACHE="$DYNAMIQ_HOME/hf_models"
 ```
 
-If your datasets or HuggingFace models are stored elsewhere, pass the appropriate cache overrides through `--extra-train-args`.
+or pass cache paths to the launchers:
+
+```bash
+--data-cache-dir "$DYNAMIQ_HOME/hf_data"
+--model-cache-dir "$DYNAMIQ_HOME/hf_models"
+```
+
+The Llama and Gemma runs use gated Hugging Face model repositories. Before
+running those jobs on a new machine, accept the model licenses on Hugging Face
+and authenticate once:
+
+```bash
+huggingface-cli login
+```
 
 
 # Testbed evaluation
@@ -333,6 +350,7 @@ If you are not using SGE, add `--launch-mode direct` to the same command.
 * `--pipeline-inflight`: number of in-flight tiles per rail.
 * `--gpu-pair-starts`: ordered GPU pair starts to try on each node. The selected pair should be connected by NVLink/NV4.
 * `--max-used-mb`: treats a GPU as busy if its memory usage is above this threshold.
+* `--data-cache-dir`, `--model-cache-dir`: optional Hugging Face cache directories for automatic dataset and model downloads.
 * `--per-device-train-batch-size`, `--learning-rate`, `--num-train-epochs`: forwarded to the training scripts.
 * `--extra-train-args`: raw extra arguments appended to each training command.
 

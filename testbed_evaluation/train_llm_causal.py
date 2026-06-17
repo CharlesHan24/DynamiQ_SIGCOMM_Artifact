@@ -175,12 +175,14 @@ def parse_args():
     parser.add_argument(
         "--data_cache_dir",
         type=str,
-        default="/cluster/project2/gcreduce_data/data"
+        default=os.environ.get("DYNAMIQ_DATA_CACHE"),
+        help="Dataset cache directory. Defaults to Hugging Face's cache unless DYNAMIQ_DATA_CACHE is set.",
     )
     parser.add_argument(
         "--model_cache_dir",
         type=str,
-        default="/cluster/project2/gcreduce_data/pretrained_models/language_model"
+        default=os.environ.get("DYNAMIQ_MODEL_CACHE"),
+        help="Model cache directory. Defaults to Hugging Face's cache unless DYNAMIQ_MODEL_CACHE is set.",
     )
     
 

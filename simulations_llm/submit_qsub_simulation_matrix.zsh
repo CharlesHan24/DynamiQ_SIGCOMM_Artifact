@@ -38,6 +38,8 @@ CAUSAL_BLOCK_SIZE=3000
 PER_DEVICE_TRAIN_BATCH_SIZE=""
 LEARNING_RATE=""
 EXTRA_TRAIN_ARGS=""
+DATA_CACHE_DIR="${DYNAMIQ_DATA_CACHE:-}"
+MODEL_CACHE_DIR="${DYNAMIQ_MODEL_CACHE:-}"
 
 GPU_MAX_USED_MB=512
 NUMA_NODE="none"
@@ -70,6 +72,8 @@ Important options:
   --learning-rate <x>           Override task/model LR formula.
   --per-device-train-batch-size <n>
                                 Override task defaults.
+  --data-cache-dir <path>       Dataset cache passed to train scripts. Default: env/HF cache
+  --model-cache-dir <path>      Model cache passed to train scripts. Default: env/HF cache
   --extra-train-args <string>   Raw extra args appended to each train command.
   --dry-run                     Print launcher commands without submitting or running.
 EOF
@@ -103,6 +107,8 @@ while [[ $# -gt 0 ]]; do
     --causal-block-size|--block-size|--block_size) CAUSAL_BLOCK_SIZE="$2"; shift 2 ;;
     --per-device-train-batch-size|--per_device_train_batch_size) PER_DEVICE_TRAIN_BATCH_SIZE="$2"; shift 2 ;;
     --learning-rate|--learning_rate) LEARNING_RATE="$2"; shift 2 ;;
+    --data-cache-dir|--data_cache_dir) DATA_CACHE_DIR="$2"; shift 2 ;;
+    --model-cache-dir|--model_cache_dir) MODEL_CACHE_DIR="$2"; shift 2 ;;
     --extra-train-args) EXTRA_TRAIN_ARGS="$2"; shift 2 ;;
     --gpu-max-used-mb|--max-used-mb) GPU_MAX_USED_MB="$2"; shift 2 ;;
     --numa-node) NUMA_NODE="$2"; shift 2 ;;
@@ -219,6 +225,8 @@ mkdir -p "$RUN_DIR"
   echo "quantization_levels=$QUANTIZATION_LEVELS"
   echo "learning_rate=${LEARNING_RATE:-auto}"
   echo "per_device_train_batch_size=${PER_DEVICE_TRAIN_BATCH_SIZE:-task_default}"
+  echo "data_cache_dir=${DATA_CACHE_DIR:-hf_default}"
+  echo "model_cache_dir=${MODEL_CACHE_DIR:-hf_default}"
 } > "$RUN_DIR/submit_metadata.log"
 
 quote_command() {
@@ -318,6 +326,8 @@ submit_one_node() {
   )
   [[ -n "$LEARNING_RATE" ]] && node_args+=(--learning-rate "$LEARNING_RATE")
   [[ -n "$PER_DEVICE_TRAIN_BATCH_SIZE" ]] && node_args+=(--per-device-train-batch-size "$PER_DEVICE_TRAIN_BATCH_SIZE")
+  [[ -n "$DATA_CACHE_DIR" ]] && node_args+=(--data-cache-dir "$DATA_CACHE_DIR")
+  [[ -n "$MODEL_CACHE_DIR" ]] && node_args+=(--model-cache-dir "$MODEL_CACHE_DIR")
   [[ -n "$EXTRA_TRAIN_ARGS" ]] && node_args+=(--extra-train-args "$EXTRA_TRAIN_ARGS")
   (( CONTINUE_ON_FAILURE )) && node_args+=(--continue-on-failure)
 

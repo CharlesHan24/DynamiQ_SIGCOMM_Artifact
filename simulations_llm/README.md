@@ -45,6 +45,34 @@ The correlated-random tensors are large. If you only need to refresh the fixed d
 python simulations_llm/gen_correlated_rand.py --skip-correlated-rand --skip-hadamard
 ```
 
+The LLM datasets and pretrained models are loaded with Hugging Face APIs. If
+they are not already cached, the scripts download them automatically. By default
+they use Hugging Face's normal cache locations, usually under
+`~/.cache/huggingface`.
+
+To use explicit cache directories, either export:
+
+```zsh
+export DYNAMIQ_DATA_CACHE="$PWD/hf_data"
+export DYNAMIQ_MODEL_CACHE="$PWD/hf_models"
+```
+
+or pass cache paths to the simulation launcher:
+
+```zsh
+simulations_llm/submit_qsub_simulation_matrix.zsh \
+  --data-cache-dir "$PWD/hf_data" \
+  --model-cache-dir "$PWD/hf_models"
+```
+
+The Llama and Gemma runs use gated Hugging Face model repositories. Before
+running those jobs on a new machine, accept the model licenses on Hugging Face
+and authenticate once:
+
+```zsh
+huggingface-cli login
+```
+
 ## Quick Start
 
 From the repository root, first inspect the generated qsub commands:
@@ -158,6 +186,22 @@ simulations_llm/submit_qsub_simulation_matrix.zsh \
   --extra-train-args "--measure_comm_error"
 ```
 
+Enable communication-error logging, including vNMSE, for a simulation run:
+
+```zsh
+simulations_llm/submit_qsub_simulation_matrix.zsh \
+  --workers 2 \
+  --combos causal:llama:meta-llama/Llama-3.2-1B \
+  --aggregation-methods dynamiQ_mee_5bit_dynamic_bitrate \
+  --extra-train-args "--measure_comm_error"
+```
+
+With `--measure_comm_error`, rank 0 computes the exact all-reduce result for
+each gradient bucket and writes cumulative per-step error data under each
+method's `output/` directory. The legacy raw L2 sums are appended to `log.txt`.
+The easier-to-parse file is `comm_error_vnmse.tsv`, whose `vnmse` column is
+`l2_error / l2_norm`.
+
 ## Task Format
 
 Use `--combos` to choose experiments. It is a comma-separated list of triples:
@@ -268,6 +312,8 @@ If you are not using SGE, add `--launch-mode direct` to the same command.
 --learning-rate <x>           Override the automatic learning rate.
 --per-device-train-batch-size <n>
                               Override task defaults.
+--data-cache-dir <path>       Hugging Face dataset cache directory.
+--model-cache-dir <path>      Hugging Face model cache directory.
 --extra-train-args <string>   Extra arguments appended to each training command.
 --dry-run                     Print launcher commands without submitting or running.
 ```
@@ -310,9 +356,17 @@ experiment_<index>_<task>_<label>_<workers>w/
     node_<rank>.err
     node_<rank>.status
     output/
+      results.txt
+      log.txt
+      comm_error_vnmse.tsv     Present when --measure_comm_error is enabled.
 ```
 
 `command.log` records the exact `accelerate launch` command used for each aggregation method.
+
+`results.txt` contains the task metrics such as loss, perplexity, or accuracy.
+When communication-error logging is enabled, `log.txt` keeps the legacy raw
+`l2_error l2_norm pred_l2_norm` rows, and `comm_error_vnmse.tsv` records the same
+values with headers plus `vnmse`.
 
 ## Troubleshooting
 

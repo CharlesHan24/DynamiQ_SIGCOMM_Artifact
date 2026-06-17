@@ -1,3 +1,4 @@
+from pathlib import Path
 
 import torch
 import torch.distributed as dist
@@ -10,6 +11,43 @@ from .thc_hooks import P2P_THC_compress_hook
 
 INTEG_PARTITION_LAYER = 1
 CHUNK_SIZE_THRESHOLD = 1 << 28 # 2^23 for language tasks and 2^24 for image tasks
+
+
+def _to_float(value):
+    if isinstance(value, torch.Tensor):
+        return value.detach().to(dtype=torch.float64).cpu().item()
+    return float(value)
+
+
+def _write_comm_error_vnmse(state):
+    params = state["params"]
+    args = state["args"]
+    output_dir = getattr(args, "output_dir", None)
+    if output_dir is None:
+        return
+
+    l2_error = _to_float(params["sum_l2_error"])
+    l2_norm = _to_float(params["sum_l2_norm"])
+    pred_l2_norm = _to_float(params["sum_l2_pred_norm"])
+    vnmse = l2_error / (l2_norm + 1e-11)
+    pred_norm_ratio = pred_l2_norm / (l2_norm + 1e-11)
+
+    if "comm_error_vnmse_file" not in params:
+        out_path = Path(output_dir) / "comm_error_vnmse.tsv"
+        needs_header = not out_path.exists() or out_path.stat().st_size == 0
+        params["comm_error_vnmse_file"] = open(out_path, "a")
+        if needs_header:
+            params["comm_error_vnmse_file"].write(
+                "batch_idx\taggregation_method\tl2_error\tl2_norm\tpred_l2_norm\tvnmse\tpred_norm_ratio\n"
+            )
+
+    comm_error_file = params["comm_error_vnmse_file"]
+    comm_error_file.write(
+        f"{state['batch_idx']}\t{args.aggregation_method}\t"
+        f"{l2_error:.12e}\t{l2_norm:.12e}\t{pred_l2_norm:.12e}\t"
+        f"{vnmse:.12e}\t{pred_norm_ratio:.12e}\n"
+    )
+    comm_error_file.flush()
 
 def normalize_mean(tensor, dim, chunk_size):
     tensor = tensor.reshape(dim // chunk_size, chunk_size)
@@ -1144,6 +1182,7 @@ def wrapper_hook(state, bucket):
                 txt_log_file = params["txt_log_file"]
                 txt_log_file.write("{} {} {}\n".format(state["params"]["sum_l2_error"], state["params"]["sum_l2_norm"], state["params"]["sum_l2_pred_norm"]))
                 txt_log_file.flush()
+                _write_comm_error_vnmse(state)
 
             if "rescale" in state["args"].aggregation_method:
                 state["params"]["ratio"] = state["params"]["ratio"] * 0.75 + 0.25 * ((state["params"]["sum_l2_norm"] / (state["params"]["sum_l2_pred_norm"] + 1e-11)) ** 0.5)
