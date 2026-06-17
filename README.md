@@ -383,7 +383,7 @@ See `rdma_comm_compress/README.md` for the ring all-reduce topology, bandwidth m
 
 ## Simulation Jobs
 
-The repository also includes simulation-based LLM experiments under `simulations_llm/`. These jobs are used for the end-to-end simulated train without caring about the performance (speed), getting the round-to-accuracy results. These results, together with the testbed evaluation where we can measure the time-per-round data, will be used to reproduce the end-to-end time-to-accuracy (TTA) figures such as `figure 4` and `figure 5`.
+The repository also includes simulation-based LLM experiments under `simulations_llm/`. These jobs are used for the end-to-end simulated train without caring about the performance (speed), getting the round-to-accuracy results. These results, together with the testbed evaluation where we can measure the time-per-round data, will be used to reproduce the end-to-end time-to-accuracy (TTA) figures such as `figure 4` and `figure 5`: TTA = round-to-accuracy * time-per-round.
 
 For the full simulation workflow, including:
 
