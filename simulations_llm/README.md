@@ -366,7 +366,7 @@ experiment_<index>_<task>_<label>_<workers>w/
 `results.txt` contains the task metrics such as loss, perplexity, or accuracy.
 When communication-error logging is enabled, `log.txt` keeps the legacy raw
 `l2_error l2_norm pred_l2_norm` rows, and `comm_error_vnmse.tsv` records the same
-values with headers plus `vnmse`.
+values with headers plus `vnmse`. These vNMSE results can be used to reproduce Table 3.
 
 ## Troubleshooting
 
